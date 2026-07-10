@@ -2,7 +2,7 @@ const Filter = require("./filter")
 
 const router = require("express").Router()
 
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
     try {
         const { prompt } = req?.body
         if (!prompt) return res.status(409).json({ error: true, msg: "Invalid payload !" })
