@@ -1,3 +1,4 @@
+require("dotenv").config()
 const Groq = require("groq-sdk");
 const policy = require("./policy");
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
