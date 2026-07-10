@@ -16,7 +16,7 @@ const deviceInfo = (req, res, next) => {
             os: agent.os.toString()
         }
     };
-      console.log(deviceInfo);
+    //   console.log(deviceInfo);
     
     req.deviceInfo = deviceInfo;
     next();
