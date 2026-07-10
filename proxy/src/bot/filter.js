@@ -1,14 +1,24 @@
-/**
- * 
- * @param {string} text 
- * @returns {isDanger:boolean,danger:string}
- */
+const Groq = require("groq-sdk");
+const policy = require("./policy");
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
 async function Filter(text) {
-    /**
-     * analyse le prompt et renvoie un json pour voir le risque d'injection 
-     * la reponse doit etre sous la forme {isDanger:boolean,danger:string}
-     */
-    return {isDanger:true,danger:"Injection SQL"}
+    const chatCompletion = await groq.chat.completions.create({
+        messages: [
+            {
+                role: "system",
+                content: policy(text),
+            },
+            {
+                role: "user",
+                content: text,
+            }
+        ],
+        model: "openai/gpt-oss-safeguard-20b",
+    });
+
+    console.log(chatCompletion.choices[0]?.message?.content || "");
+    return chatCompletion.choices[0]?.message?.content || { violation: 0 }
 }
 
 
