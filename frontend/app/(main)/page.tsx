@@ -1,10 +1,9 @@
-import { HabitPageLayout } from "@/components/habits/habit-page-layout";
-import { TodayView } from "@/components/habits/today-view";
+import React from 'react'
 
-export default function TodayPage() {
+function page() {
   return (
-    <HabitPageLayout>
-      <TodayView />
-    </HabitPageLayout>
-  );
+    <div>page</div>
+  )
 }
+
+export default page
