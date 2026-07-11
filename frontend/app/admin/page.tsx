@@ -1,10 +1,5 @@
-import { HabitPageLayout } from "@/components/habits/habit-page-layout";
-import { TodayView } from "@/components/habits/today-view";
+import { DashboardContent } from "@/components/dashboard/dashboard-content"
 
-export default function TodayPage() {
-  return (
-    <HabitPageLayout>
-      <TodayView />
-    </HabitPageLayout>
-  );
+export default function DashboardPage() {
+  return <DashboardContent />
 }
