@@ -1,26 +1,56 @@
-require("dotenv").config()
-const router = require("express").Router()
-const axios = require("axios")
-const Filter = require("./filter")
+require("dotenv").config();
+
+const router = require("express").Router();
+const axios = require("axios");
+const crypto = require("crypto");
+
+const Filter = require("./filter");
+const SecurityLog = require("../models/securityLog.model");
 
 router.post("/", async (req, res) => {
     try {
-        const { prompt } = req?.body
-        if (!prompt) return res.status(409).json({ error: true, msg: "Invalid payload !" })
-        let analyse = await Filter(prompt)
-        analyse = JSON.parse(analyse)
-        // console.log(typeof analyse, analyse)
+        const { prompt } = req.body;
+        if (!prompt) return res.status(400).json({ success: false, message: "Prompt is required." });
 
-        if (analyse.violation) return res.status(403).json({ err: true, msg: analyse?.rationale || "this message have injection ", injection: analyse.category || "" })
+        const start = Date.now();
+        let decision = JSON.parse(await Filter(prompt));
+        const analysisDuration = Date.now() - start;
 
-        //Forward request to real API
-        const { data: response } = await axios.post(process.env.AI_LAB + "/agent", { prompt })
+        await SecurityLog.create({
+            requestId: crypto.randomUUID(),
+            user: {
+                id: req.user?._id || null,
+                email: req.user?.email || null
+            },
+            ipAddress: req.ip,
+            userAgent: req.headers["user-agent"],
+            prompt,
+            status: decision.status,
+            riskScore: decision.riskScore,
+            attackCategory: decision.attackCategory,
+            triggeredRules: decision.triggeredRules,
+            aiDecision: decision,
+            analysisDuration,
+            action: decision.isMalicious ? "blocked" : "forwarded"
+        });
 
-        res.json(response)
-    } catch (e) {
-        console.log("Error occured while trying to solve prompt  injection in the request  ", e)
-        return res.json({ msg: "Ta maman mola !" })
+        if (decision.isMalicious) {
+            return res.status(403).json({
+                success: false,
+                message: decision.reason,
+                category: decision.attackCategory,
+                riskScore: decision.riskScore,
+                confidence: decision.confidence
+            });
+        }
+
+        const { data } = await axios.post(`${process.env.AI_LAB}/agent`, { prompt });
+        return res.status(200).json(data);
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: "Internal server error." });
     }
-})
+});
 
-module.exports = router
+module.exports = router;
