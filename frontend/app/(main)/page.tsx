@@ -1,9 +1,5 @@
-import React from 'react'
+import { ChatContainer } from "@/components/chat/chat-container";
 
-function page() {
-  return (
-    <div>page</div>
-  )
+export default function ChatPage() {
+  return <ChatContainer />;
 }
-
-export default page
