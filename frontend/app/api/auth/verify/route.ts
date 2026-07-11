@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const GATEWAY_API_URL = process.env.GATEWAY_API_URL;
+const GATEWAY_API_URL = process.env.NEXT_PUBLIC_GATEWAY_API_URL;
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   const token = authHeader.split(" ")[1];
 
   try {
-    const response = await fetch(`${GATEWAY_API_URL}/auth/verify`, {
+    const response = await fetch(`${GATEWAY_API_URL}/auth/me`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

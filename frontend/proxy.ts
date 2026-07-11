@@ -17,20 +17,20 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isPublicRoute && sessionToken) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/admin", request.url));
   }
 
-  if (sessionToken) {
-    const isValid = await verifySession(sessionToken, request);
-    if (!isValid) {
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("redirect", pathname);
-      loginUrl.searchParams.set("reason", "session_expired");
-      const response = NextResponse.redirect(loginUrl);
-      response.cookies.delete(SESSION_COOKIE_NAME);
-      return response;
-    }
-  }
+//   if (sessionToken) {
+//     const isValid = await verifySession(sessionToken, request);
+//     if (!isValid) {
+//       const loginUrl = new URL("/admin", request.url);
+//       loginUrl.searchParams.set("redirect", pathname);
+//       loginUrl.searchParams.set("reason", "session_expired");
+//       const response = NextResponse.redirect(loginUrl);
+//     //   response.cookies.delete(SESSION_COOKIE_NAME);
+//       return response;
+//     }
+//   }
 
   return NextResponse.next();
 }
