@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import axios from "axios";
 
 export type MessageRole = "user" | "assistant";
@@ -42,7 +42,7 @@ type ChatResult = ChatSuccessResult | ChatBlockedResult | ChatErrorResult;
 
 export async function sendChatPrompt(prompt: string): Promise<ChatResult> {
   try {
-    const res = await axios.post(`${process.env.NEXT_PUBLIC_GATEWAY_API_URL}/ai`, { prompt });
+    const res = await axios.post("/ai", { prompt });
     return { ok: true, response: res.data.response };
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
@@ -73,12 +73,31 @@ export async function sendChatPrompt(prompt: string): Promise<ChatResult> {
   }
 }
 
+const STORAGE_KEY = "asg_chat_messages";
+const MAX_STORED_MESSAGES = 100;
+
 export function useChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [status, setStatus] = useState<ChatStatus>("idle");
   const [blockedInfo, setBlockedInfo] = useState<BlockedInfo | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const isSending = useRef(false);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) setMessages(JSON.parse(stored));
+    } catch {
+      setMessages([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      const toStore = messages.slice(-MAX_STORED_MESSAGES);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
+    } catch {}
+  }, [messages]);
 
   const sendPrompt = useCallback(async (prompt: string) => {
     if (isSending.current || !prompt.trim()) return;
