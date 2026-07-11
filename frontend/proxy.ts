@@ -5,7 +5,9 @@ const SESSION_COOKIE_NAME = "asg_session";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
+  const isPublicRoute = PUBLIC_ROUTES.some((route) =>
+    pathname.startsWith(route),
+  );
   const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 
   if (!isPublicRoute && !sessionToken) {
@@ -33,11 +35,17 @@ export async function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
-async function verifySession(token: string, request: NextRequest): Promise<boolean> {
+async function verifySession(
+  token: string,
+  request: NextRequest,
+): Promise<boolean> {
   try {
     const response = await fetch(new URL("/api/auth/verify", request.url), {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       cache: "no-store",
     });
     return response.ok;
@@ -48,5 +56,5 @@ async function verifySession(token: string, request: NextRequest): Promise<boole
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  matcher: ["/admin/:path*"],
 };
