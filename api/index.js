@@ -3,7 +3,9 @@ const Agent = require("./Agent")
 const app = express()
 const PORT = process.env.PORT || 3002
 
-app.post('/agent', async (req, res) => {
+app
+.use(express.json())
+.post('/agent', async (req, res) => {
     const { prompt } = req.body
     if (!prompt) return res.json({ error: true, msg: "Please provide the user prompt !" })
     const response = await Agent(prompt)
