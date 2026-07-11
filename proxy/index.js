@@ -38,6 +38,7 @@ app
     .use(express.urlencoded({ extended: false }))
     .use("/ai", require("./src/bot/routes"))
     .use('/s',require("./src/security.routes"))
+    .use("/auth",require("./src/routes/auth.route"))
     .get("/", (req, res) => {
         res.status(200).json({ success: true, msg: "Yo ! On dit quoi ?" });
     })
