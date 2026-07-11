@@ -8,8 +8,8 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Forma — Habit Tracker",
-  description: "A beautiful habit tracking app built with Next.js and shadcn/ui",
+  title: "Gateway Project",
+  description: "Made By Love for project by FELIX WARANO",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

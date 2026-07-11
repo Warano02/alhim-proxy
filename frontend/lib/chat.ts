@@ -42,7 +42,7 @@ type ChatResult = ChatSuccessResult | ChatBlockedResult | ChatErrorResult;
 
 export async function sendChatPrompt(prompt: string): Promise<ChatResult> {
   try {
-    const res = await axios.post("/ai", { prompt });
+    const res = await axios.post(`${process.env.NEXT_PUBLIC_GATEWAY_API_URL}/ai`, { prompt });
     return { ok: true, response: res.data.response };
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
