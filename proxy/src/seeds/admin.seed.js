@@ -1,22 +1,38 @@
 const bcrypt = require("bcryptjs");
 const User = require("../models/users.model");
 
+const users = [
+    {
+        email: "carineteoi@gmail.com",
+        name: "Felix Warano",
+        password: "123456789"
+    },
+    {
+        email: "abdoulhalim610@gmail.com",
+        name: "Abdoul Halim",
+        password: "123456789"
+    },
+]
+
 async function seedAdmin() {
     try {
-        const exist = await User.findOne({ email: "carineteoi@gmail.com" });
+        for (const user of users) {
+            const exist = await User.findOne({ email: user.email });
 
-        if (exist) return;
+            if (!exist) {
+                const password = await bcrypt.hash(user.password, 10);
 
-        const password = await bcrypt.hash("123456789", 10);
+                await User.create({
+                    fullname: user.name,
+                    email: user.email,
+                    password,
+                    role: "admin"
+                });
 
-        await User.create({
-            fullname: "Felix Warano",
-            email: "carineteoi@gmail.com",
-            password,
-            role: "admin"
-        });
+                console.log(user.name + " default admin created....");
+            }
 
-        console.log("Default admin created.");
+        }
     } catch (error) {
         console.error("Admin seed failed:", error.message);
     }
