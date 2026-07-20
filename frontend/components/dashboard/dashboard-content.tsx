@@ -1,18 +1,41 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useTheme } from "next-themes"
 import { Activity, ShieldCheck, ShieldAlert, Gauge, ArrowUpRight, ArrowDownRight, Inbox } from "lucide-react"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts"
+import { Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts"
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Tooltip as ChartTooltip,
+    Legend as ChartLegend,
+    type ChartOptions,
+} from "chart.js"
+import { Line } from "react-chartjs-2"
 import { Badge } from "@/components/ui/badge"
 import { fetchSecurityStats, fetchRecentEvents, type SecurityStats, type RecentEvent } from "@/lib/dashboard"
 
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ChartTooltip, ChartLegend)
+
+const CHART_COLORS = {
+    blue: "rgb(54, 162, 235)",
+    red: "rgb(255, 99, 132)",
+}
+
+function transparentize(color: string, opacity: number) {
+    return color.replace("rgb(", "rgba(").replace(")", `, ${1 - opacity})`)
+}
+
 const requestsOverTime = [
-    { time: "00:00", requests: 4 },
-    { time: "04:00", requests: 2 },
-    { time: "08:00", requests: 11 },
-    { time: "12:00", requests: 23 },
-    { time: "16:00", requests: 18 },
-    { time: "20:00", requests: 9 },
+    { time: "00:00", allowed: 3, blocked: 1 },
+    { time: "04:00", allowed: 1, blocked: 1 },
+    { time: "08:00", allowed: 8, blocked: 3 },
+    { time: "12:00", allowed: 17, blocked: 6 },
+    { time: "16:00", allowed: 14, blocked: 4 },
+    { time: "20:00", allowed: 7, blocked: 2 },
 ]
 
 function DashboardHeader() {
@@ -70,20 +93,94 @@ function StatsCards({ stats }: { stats: SecurityStats }) {
     )
 }
 
+function useCssColor(name: string, fallback: string) {
+    const { resolvedTheme } = useTheme()
+    const [color, setColor] = useState(fallback)
+
+    useEffect(() => {
+        const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+        if (value) setColor(value)
+    }, [name, resolvedTheme])
+
+    return color
+}
+
 function RequestsChart() {
+    const textColor = useCssColor("--muted-foreground", "#71717a")
+    const gridColor = useCssColor("--border", "#e4e4e7")
+
+    const allowedTotal = requestsOverTime.reduce((sum, point) => sum + point.allowed, 0)
+    const blockedTotal = requestsOverTime.reduce((sum, point) => sum + point.blocked, 0)
+
+    const data = useMemo(
+        () => ({
+            labels: requestsOverTime.map((point) => point.time),
+            datasets: [
+                {
+                    label: "Allowed",
+                    data: requestsOverTime.map((point) => point.allowed),
+                    borderColor: CHART_COLORS.blue,
+                    backgroundColor: transparentize(CHART_COLORS.blue, 0.5),
+                    pointBackgroundColor: CHART_COLORS.blue,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    borderWidth: 2,
+                    tension: 0.3,
+                },
+                {
+                    label: "Blocked",
+                    data: requestsOverTime.map((point) => point.blocked),
+                    borderColor: CHART_COLORS.red,
+                    backgroundColor: transparentize(CHART_COLORS.red, 0.5),
+                    pointBackgroundColor: CHART_COLORS.red,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    borderWidth: 2,
+                    tension: 0.3,
+                },
+            ],
+        }),
+        [],
+    )
+
+    const options: ChartOptions<"line"> = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+            legend: {
+                position: "top",
+                align: "end",
+                labels: { color: textColor, boxWidth: 12, usePointStyle: true, pointStyle: "circle" },
+            },
+            tooltip: {
+                mode: "index",
+                intersect: false,
+            },
+        },
+        scales: {
+            x: {
+                ticks: { color: textColor, font: { size: 12 } },
+                grid: { color: gridColor },
+            },
+            y: {
+                beginAtZero: true,
+                ticks: { color: textColor, font: { size: 12 }, precision: 0 },
+                grid: { color: gridColor },
+            },
+        },
+    }
+
     return (
         <div className="rounded-xl border border-border bg-card p-5">
-            <h3 className="text-sm font-medium text-foreground">Requests Over Time</h3>
-            <div className="mt-4 h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={requestsOverTime}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                        <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                        <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card-elevated))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-                        <Line type="monotone" dataKey="requests" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                    </LineChart>
-                </ResponsiveContainer>
+            <div>
+                <h3 className="text-sm font-medium text-foreground">Requests Over Time</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                    {allowedTotal.toLocaleString()} allowed · {blockedTotal.toLocaleString()} blocked
+                </p>
+            </div>
+            <div className="mt-4 h-80">
+                <Line data={data} options={options} />
             </div>
         </div>
     )
@@ -94,7 +191,7 @@ function AttackDistributionChart({ stats }: { stats: SecurityStats }) {
         { name: "Allowed", value: stats.allowedRequests },
         { name: "Blocked", value: stats.blockedRequests },
     ]
-    const colors = ["hsl(var(--success))", "hsl(var(--destructive))"]
+    const colors = ["#3b82f6", "#ef4444"]
     return (
         <div className="rounded-xl border border-border bg-card p-5">
             <h3 className="text-sm font-medium text-foreground">Allowed vs Blocked</h3>
